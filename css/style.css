@@ -21,3 +21,23 @@
 ::-webkit-scrollbar-thumb:hover {
     background: rgb(58, 120, 255);
 }
+
+body {
+    min-height: 100vh;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+}
+
+.canvas-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.canvas-container canvas {
+    max-width: 100%;
+}

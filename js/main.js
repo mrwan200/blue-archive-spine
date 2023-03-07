@@ -1,50 +1,51 @@
 let app;
 let char;
 let audioList = []
-let audios;
 let isCharacterLoaded = false;
 let debug = 0; //set via console
 
 function reCanvas() {
-    audios = JSON.parse(httpGet("./data/audio.json"));
     app = new PIXI.Application(
         {
-            width: window.innerWidth,
-            height: window.innerHeight,
+            // width: window.innerWidth,
+            // height: window.innerHeight,
+            width: 720,
+            height: 1024,
             view: document.getElementById("screen")
         }
     );
 }
 
-function loadChar(model="./assets/spine/shiroko_home/Shiroko_home.skel") {
+async function loadChar(model) {
     isCharacterLoaded = false;
     // remove previous spine
     if(app.stage.children.length > 0) {
-        app.stage.children.pop();
-        app.loader.resources = {};
-    }
-    // remove previous audio
-    if(audioList.length != 0) {
-        for(var i in audioList) {
-            audioList[i].stop();
-        }
-        audioList = [];
+        // app.stage.children.pop();
+        app.stage.children = []
     }
 
+    // frontend-only
+    // assets/spine/Gcg_CardFace_Char_Avatar_Ayaka_Spine/Gcg_CardFace_Char_Avatar_Ayaka_Spine_Bg.png
+    // document.body.style.backgroundImage = `url('/${model.replace('.skel', '_Bg.png')}');`
+    document.body.style = `background: url('${model.replace('.skel', '_Bg.png')}'), black;`
+
+    const bg = PIXI.Sprite.from(`./${model.replace('.skel', '_Bg.png')}`);
+    bg.x = 0;
+    bg.y = 0;
+    bg.width = 720;
+    bg.height = 1024;
+    app.stage.addChild(bg);
+
     // load new spine
-    app.loader
-        .add('char', `./${model}`)
-        .load(onAssetsLoaded);
+    await PIXI.Assets.load(`./${model}`)
+        .then(r => onAssetsLoaded(null, {
+            char: {
+                spineData: r.spineData
+            }
+        }));
 }
 
 function onAssetsLoaded(loader,res) {
-    if(audioList.length != 0) {
-        for(var i in audioList) {
-            audioList[i].stop();
-        }
-        audioList = [];
-    }
-
     char = new PIXI.spine.Spine(res.char.spineData);
 
     // console.log(char)
@@ -52,17 +53,17 @@ function onAssetsLoaded(loader,res) {
     // console.log(char.spineData.width)
 
     // Scaler
-    char.scale.x = 0.5;
-    char.scale.y = 0.5;
+    char.scale.x = 1;
+    char.scale.y = 1;
 
     // Centerize
-    char.x = window.innerWidth/2;
-    char.y = window.innerHeight/1;
+    char.x = 720 / 2;
+    char.y = 1024 / 2;
 
     //Set option value
-    option.scale.value = 0.5;
-    option.x.value = char.x;
-    option.y.value = char.y;
+    // option.scale.value = 0.5;
+    // option.x.value = char.x;
+    // option.y.value = char.y;
 
     // Insert animations to index.html
     const animations = res.char.spineData.animations;
@@ -83,59 +84,12 @@ function onAssetsLoaded(loader,res) {
     } else {
         char.state.setAnimation(0, animations[0].name, option.loop.checked);
     }
-    // Voiceline Listener / Handler
-    char.state.addListener({
-        event: function(entry, event) {
-            if(debug)
-                console.log(event)
-            if(event.stringValue == '')
-                return;
-            if(!option.talkSound.checked)
-                return;
-            let charName = option.models.options[option.models.selectedIndex].text.replace("_home", "")
-            //Camalize
-            if(charName.indexOf("_") != -1) {
-                charName = charName.toLowerCase().replace(/([-_][a-z])/g, group =>
-                group
-                .toUpperCase()
-                .replace('-', '')
-                .replace('_', '')
-                );
-            }
-            charName = charName.charAt(0).toUpperCase() + charName.slice(1);
-            if(debug)
-                console.log(charName)
-            //Play
-            if(charName == 'MashiroSwimsuit')
-                charName = 'CH0061';
-            if(charName == 'ShirokoRidingsuit')
-                charName = 'ShirokoRidingSuit'
-            let voice = new Howl({
-                src: [audios[event.stringValue]]
-            });
-            // If already loaded, play it
-            if(voice.state() == 'loaded')
-                voice.play();
-            else if(voice.state() == 'loading') {
-                voice.on('load', function() {
-                    voice.play();
-                })
-            }
-            audioList.push(voice);
-        }
-    })
+
     //Add to main canvas
     app.stage.addChild(char);
     isCharacterLoaded = true;
 }
 
 function playAnimation(name) {
-    if(audioList.length != 0) {
-        for(var i in audioList) {
-            audioList[i].stop();
-        }
-        audioList = [];
-    }
-
     char.state.setAnimation(0, name, option.loop.checked);
 }
